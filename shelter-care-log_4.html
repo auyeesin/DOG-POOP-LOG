@@ -1,0 +1,1447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shelter Care Log</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#EEF2EC;
+    --surface:#FFFFFF;
+    --surface-2:#F6F4EC;
+    --ink:#1E2E28;
+    --ink-soft:#5B6862;
+    --line:#DCE3D8;
+    --primary:#2C6157;
+    --primary-dark:#1C4038;
+    --primary-contrast:#FFFFFF;
+    --gold:#D89B2E;
+    --status-normal:#5E9A67;
+    --status-normal-bg:#E7F2E5;
+    --status-soft:#DE9F1F;
+    --status-soft-bg:#FBF0D8;
+    --status-loose:#CC6A2E;
+    --status-loose-bg:#FBE6D8;
+    --status-diarrhea:#B84A34;
+    --status-diarrhea-bg:#F8E3DC;
+    --status-skip:#95A19B;
+    --status-skip-bg:#EAEDE9;
+    --warn:#B5501E;
+    --warn-bg:#FBEADD;
+    --radius:14px;
+    --shadow:0 1px 2px rgba(30,46,40,0.06), 0 4px 14px rgba(30,46,40,0.06);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;}
+  html,body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter',system-ui,-apple-system,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  #app{ max-width:640px; margin:0 auto; min-height:100vh; background:var(--bg); padding-bottom:56px; }
+  button{ font-family:inherit; cursor:pointer; }
+  input, textarea{ font-family:inherit; }
+  button:focus-visible, input:focus-visible, textarea:focus-visible{ outline:2px solid var(--primary-dark); outline-offset:2px; }
+
+  .topbar{
+    position:sticky; top:0; z-index:20; background:var(--primary); color:var(--primary-contrast);
+    padding:16px 18px 12px; display:flex; align-items:flex-start; justify-content:space-between;
+    box-shadow:0 2px 10px rgba(0,0,0,0.08);
+  }
+  .brand-mark{ font-size:20px; line-height:1; display:block; margin-bottom:2px; opacity:.9; }
+  .topbar h1{ font-family:'Fraunces', serif; font-weight:600; font-size:20px; margin:0; letter-spacing:.2px; }
+  .icon-btn{
+    background:rgba(255,255,255,0.14); border:none; color:var(--primary-contrast);
+    width:36px; height:36px; border-radius:10px; font-size:16px;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .icon-btn:active{ background:rgba(255,255,255,0.26); }
+  .icon-btn-row{ display:flex; gap:6px; }
+
+  .sync-banner{
+    background:var(--warn-bg); color:var(--warn); font-size:12.5px; font-weight:600;
+    padding:9px 16px; text-align:center; line-height:1.4;
+  }
+  .sync-banner.ok{ display:none; }
+
+  .tabs{ position:sticky; top:64px; z-index:19; display:flex; background:var(--surface); border-bottom:1px solid var(--line); }
+  .tab-btn{ flex:1; border:none; background:transparent; padding:12px 8px 10px; font-size:14px; font-weight:600; color:var(--ink-soft); border-bottom:3px solid transparent; }
+  .tab-btn.active{ color:var(--primary-dark); border-bottom-color:var(--gold); }
+  .tab-panel{ display:none; padding:14px 14px 8px; }
+  .tab-panel.active{ display:block; }
+
+  .log-controls{ display:flex; align-items:center; gap:6px; margin-bottom:10px; flex-wrap:wrap; }
+  .nav-arrow{ width:34px; height:34px; border-radius:9px; border:1px solid var(--line); background:var(--surface); font-size:16px; color:var(--primary-dark); flex-shrink:0; }
+  #datePicker{ flex:1 1 120px; min-width:110px; border:1px solid var(--line); background:var(--surface); border-radius:9px; padding:7px 8px; font-size:13.5px; color:var(--ink); }
+  .shift-toggle{ display:flex; background:var(--surface-2); border-radius:10px; padding:3px; border:1px solid var(--line); width:100%; margin-top:6px; }
+  .shift-btn{ flex:1; border:none; background:transparent; padding:8px 10px; border-radius:7px; font-size:13.5px; font-weight:600; color:var(--ink-soft); }
+  .shift-btn.active{ background:var(--primary); color:#fff; }
+
+  .progress-wrap{ margin-bottom:10px; }
+  .progress-top{ display:flex; justify-content:space-between; align-items:center; font-size:12px; color:var(--ink-soft); margin-bottom:5px; font-family:'IBM Plex Mono', monospace; }
+  .progress-track{ height:7px; background:var(--surface-2); border:1px solid var(--line); border-radius:5px; overflow:hidden; }
+  .progress-fill{ height:100%; background:var(--primary); border-radius:5px; transition:width .3s ease; }
+
+  .filter-row{ display:flex; gap:6px; margin-bottom:10px; }
+  #searchInput{ flex:1; border:1px solid var(--line); background:var(--surface); border-radius:9px; padding:8px 10px; font-size:13.5px; }
+  .chip-toggle{ border:1px solid var(--line); background:var(--surface); color:var(--ink-soft); font-size:12px; font-weight:600; padding:8px 10px; border-radius:9px; white-space:nowrap; }
+  .chip-toggle.active{ background:var(--primary); border-color:var(--primary); color:#fff; }
+
+  .legend-strip{ display:flex; gap:4px; margin-bottom:12px; flex-wrap:wrap; align-items:center; }
+  .legend-item{ display:flex; align-items:center; gap:3px; font-size:10.5px; color:var(--ink-soft); background:var(--surface); border:1px solid var(--line); border-radius:7px; padding:3px 6px 3px 4px; }
+  .legend-dot{ width:9px; height:9px; border-radius:3px; flex-shrink:0; }
+  .legend-info-btn{ border:none; background:var(--surface-2); color:var(--primary-dark); font-weight:700; font-size:11px; width:20px; height:20px; border-radius:50%; border:1px solid var(--line); }
+
+  .dot-hard, .dot-soft{ background:var(--status-soft); }
+  .dot-ideal{ background:var(--status-normal); }
+  .dot-loose{ background:var(--status-loose); }
+  .dot-watery{ background:var(--status-diarrhea); }
+  .dot-skip{ background:var(--status-skip); }
+
+  .empty-state{ text-align:center; color:var(--ink-soft); font-size:14px; padding:40px 20px; line-height:1.5; }
+  .loading-state{ text-align:center; color:var(--ink-soft); font-size:13.5px; padding:30px 20px; }
+
+  .dog-list{ display:flex; flex-direction:column; gap:8px; }
+  .dog-row{ background:var(--surface); border-radius:12px; box-shadow:var(--shadow); padding:10px 12px 11px; }
+  .row-top{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .row-name{ font-family:'Fraunces', serif; font-weight:600; font-size:15.5px; }
+  .skip-icon-btn{ border:1px solid var(--line); background:var(--surface-2); color:var(--ink-soft); font-size:13px; width:30px; height:30px; border-radius:8px; flex-shrink:0; }
+  .skip-icon-btn.active{ background:var(--status-skip-bg); border-color:var(--status-skip); }
+
+  .skip-line{ display:flex; align-items:center; justify-content:space-between; margin-top:4px; }
+  .skip-note{ font-size:12.5px; color:var(--ink-soft); font-weight:600; }
+  .undo-skip{ font-size:12px; color:var(--primary-dark); font-weight:700; border:none; background:none; }
+
+  .score-group{ display:flex; gap:4px; margin-top:8px; }
+  .score-group button{ flex:1; border:1px solid var(--line); background:var(--surface-2); color:var(--ink); font-size:13px; font-weight:700; padding:8px 0; border-radius:8px; min-height:36px; font-family:'IBM Plex Mono', monospace; }
+  .score-group button.active.tier-hard, .score-group button.active.tier-soft{ background:var(--status-soft); border-color:var(--status-soft); color:#fff; }
+  .score-group button.active.tier-ideal{ background:var(--status-normal); border-color:var(--status-normal); color:#fff; }
+  .score-group button.active.tier-loose{ background:var(--status-loose); border-color:var(--status-loose); color:#fff; }
+  .score-group button.active.tier-watery{ background:var(--status-diarrhea); border-color:var(--status-diarrhea); color:#fff; }
+
+  .row-chip-line{ display:flex; align-items:center; justify-content:space-between; margin-top:7px; gap:8px; }
+  .row-chip{ font-size:11.5px; font-weight:700; padding:3px 9px; border-radius:20px; background:var(--surface-2); color:var(--ink-soft); }
+  .row-chip.tier-hard, .row-chip.tier-soft{ background:var(--status-soft-bg); color:#8a6416; }
+  .row-chip.tier-ideal{ background:var(--status-normal-bg); color:var(--primary-dark); }
+  .row-chip.tier-loose{ background:var(--status-loose-bg); color:#8a4116; }
+  .row-chip.tier-watery{ background:var(--status-diarrhea-bg); color:var(--status-diarrhea); }
+  .more-toggle{ border:none; background:none; color:var(--primary-dark); font-size:12px; font-weight:700; padding:2px; }
+
+  .row-body{ margin-top:10px; padding-top:10px; border-top:1px dashed var(--line); }
+  .field-group{ margin-bottom:12px; }
+  .field-group:last-child{ margin-bottom:0; }
+  .field-group > label{ display:block; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:var(--ink-soft); margin-bottom:6px; }
+  .btn-group{ display:flex; gap:6px; flex-wrap:wrap; }
+  .btn-group button{ flex:1 1 auto; min-width:60px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink); font-size:13px; font-weight:600; padding:8px 6px; border-radius:9px; min-height:38px; }
+  .remedy-group button.active, .meal-group button.active, .appetite-group button.active{ background:var(--primary); border-color:var(--primary); color:#fff; }
+  .remedy-block{ background:var(--status-soft-bg); margin:0 -12px 12px; padding:10px 12px; border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+  .remedy-block > label{ color:#8a6416; }
+  .hard-hint{ background:var(--surface-2); border-radius:8px; padding:8px 10px; font-size:12.5px; color:var(--ink-soft); margin-bottom:12px; }
+
+  .appetite-note{ width:100%; margin-top:8px; border:1px solid var(--line); background:var(--surface-2); border-radius:9px; padding:8px 10px; font-size:13px; color:var(--ink); min-height:40px; resize:vertical; }
+
+  .photo-area{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .photo-add-btn{ border:1px dashed var(--line); background:var(--surface-2); color:var(--primary-dark); font-size:12.5px; font-weight:600; padding:10px 12px; border-radius:9px; }
+  .photo-thumb-wrap{ position:relative; width:64px; height:64px; }
+  .photo-thumb{ width:64px; height:64px; object-fit:cover; border-radius:9px; border:1px solid var(--line); }
+  .photo-thumb.loading{ background:var(--surface-2); }
+  .photo-remove-btn{ position:absolute; top:-6px; right:-6px; width:20px; height:20px; border-radius:50%; background:var(--status-diarrhea); color:#fff; border:none; font-size:11px; line-height:1; }
+  .hint{ font-size:11.5px; color:var(--ink-soft); margin:6px 0 0; line-height:1.4; }
+
+  .overview-controls{ display:flex; gap:8px; align-items:center; margin-bottom:14px; flex-wrap:wrap; }
+  #monthPicker{ flex:1; min-width:130px; border:1px solid var(--line); background:var(--surface); border-radius:9px; padding:8px 10px; font-size:14px; color:var(--ink); }
+  .secondary-btn{ border:1px solid var(--line); background:var(--surface); color:var(--primary-dark); font-weight:600; font-size:12.5px; padding:9px 11px; border-radius:9px; white-space:nowrap; }
+  .overview-cards{ display:flex; flex-direction:column; gap:12px; }
+  .overview-card{ background:var(--surface); border-radius:var(--radius); box-shadow:var(--shadow); padding:13px 15px 15px; text-align:left; border:none; width:100%; color:var(--ink); }
+  .ov-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:9px; gap:8px; }
+  .ov-head h3{ font-family:'Fraunces', serif; font-weight:600; font-size:16.5px; margin:0; }
+  .ov-former{ font-size:10.5px; color:var(--ink-soft); font-weight:500; }
+  .badge{ font-size:11px; font-weight:700; padding:5px 9px; border-radius:20px; white-space:nowrap; }
+  .badge.good{ background:var(--status-normal-bg); color:var(--primary-dark); }
+  .badge.watch{ background:var(--status-soft-bg); color:#8a6416; }
+  .badge.attention{ background:var(--status-diarrhea-bg); color:var(--status-diarrhea); }
+  .cal-grid{ display:grid; grid-template-columns:repeat(7, 1fr); gap:3px; margin-bottom:9px; }
+  .cal-day{ display:flex; flex-direction:column; align-items:center; gap:2px; padding:2px 0; }
+  .cal-daynum{ font-family:'IBM Plex Mono', monospace; font-size:8.5px; color:var(--ink-soft); }
+  .cal-dot{ width:8px; height:8px; border-radius:2px; background:transparent; border:1px dashed var(--line); }
+  .stat-row{ display:flex; flex-wrap:wrap; gap:7px 12px; font-family:'IBM Plex Mono', monospace; font-size:11.5px; color:var(--ink-soft); border-top:1px solid var(--line); padding-top:9px; }
+  .stat-row strong{ color:var(--ink); font-weight:600; }
+
+  .modal-overlay{ position:fixed; inset:0; background:rgba(20,28,24,0.5); display:flex; align-items:flex-end; justify-content:center; z-index:50; }
+  .modal-overlay[hidden]{ display:none; }
+  .modal-overlay[hidden]{ display:none; }
+  .modal{ background:var(--surface); width:100%; max-width:640px; max-height:86vh; border-radius:18px 18px 0 0; display:flex; flex-direction:column; overflow:hidden; }
+  @media (min-width:660px){ .modal-overlay{ align-items:center; } .modal{ border-radius:18px; max-height:80vh; } }
+  .modal-header{ display:flex; align-items:center; justify-content:space-between; padding:15px 18px; border-bottom:1px solid var(--line); flex-shrink:0; }
+  .modal-header h2{ font-family:'Fraunces', serif; font-weight:600; font-size:18px; margin:0; }
+  .modal-body{ padding:15px 18px 22px; overflow-y:auto; }
+
+  .add-dog-row{ display:flex; gap:8px; margin-bottom:10px; }
+  .add-dog-row input{ flex:1; border:1px solid var(--line); border-radius:9px; padding:10px 12px; font-size:14px; }
+  .add-dog-row button, .bulk-add-btn{ background:var(--primary); color:#fff; border:none; border-radius:9px; padding:10px 16px; font-weight:600; font-size:14px; }
+  .bulk-add-area{ width:100%; border:1px solid var(--line); border-radius:9px; padding:10px 12px; font-size:13.5px; min-height:70px; margin-bottom:8px; }
+  .roster-list{ list-style:none; margin:0 0 6px; padding:0; max-height:220px; overflow-y:auto; }
+  .roster-list li{ display:flex; align-items:center; justify-content:space-between; padding:9px 4px; border-bottom:1px solid var(--line); font-size:14px; }
+  .remove-dog-btn{ background:none; border:none; color:var(--status-diarrhea); font-size:12.5px; font-weight:600; }
+  .settings-block{ margin-bottom:16px; }
+  .settings-block > label{ display:block; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:var(--ink-soft); margin-bottom:6px; }
+  .settings-block input[type="text"]{ width:100%; border:1px solid var(--line); border-radius:9px; padding:10px 12px; font-size:14px; }
+  hr{ border:none; border-top:1px solid var(--line); margin:14px 0; }
+  .footnote{ font-size:11.5px; color:var(--ink-soft); line-height:1.5; margin-top:6px; }
+
+  .detail-list{ display:flex; flex-direction:column; gap:9px; margin-top:6px; }
+  .detail-item{ background:var(--surface-2); border-radius:10px; padding:10px 12px; font-size:13px; line-height:1.5; }
+  .detail-item .di-head{ display:flex; justify-content:space-between; font-weight:700; margin-bottom:2px; }
+  .detail-item .di-tags{ color:var(--ink-soft); font-size:11.5px; }
+  .di-photo-btn{ margin-top:6px; border:1px solid var(--line); background:var(--surface); font-size:11.5px; font-weight:600; color:var(--primary-dark); padding:5px 9px; border-radius:7px; }
+  .no-issues{ color:var(--ink-soft); font-size:13px; padding:8px 0; }
+
+  .guide-row{ display:flex; gap:10px; padding:9px 0; border-bottom:1px solid var(--line); align-items:flex-start; }
+  .guide-row:last-of-type{ border-bottom:none; }
+  .guide-num{ width:26px; height:26px; border-radius:7px; display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono', monospace; font-weight:700; font-size:13px; color:#fff; flex-shrink:0; }
+  .guide-text b{ display:block; font-size:13.5px; margin-bottom:2px; }
+  .guide-text span{ font-size:12.5px; color:var(--ink-soft); line-height:1.4; }
+  .guide-link{ display:inline-block; margin-top:10px; font-size:12.5px; color:var(--primary-dark); font-weight:600; }
+
+  .lightbox-img{ width:100%; border-radius:10px; }
+
+  .group-filter-row{ display:flex; gap:6px; overflow-x:auto; padding-bottom:2px; margin-bottom:10px; }
+  .group-filter-row .chip-toggle{ flex-shrink:0; }
+
+  .dog-list.locked .dog-row{ opacity:0.6; }
+  .dog-list.locked .dog-row button,
+  .dog-list.locked .dog-row textarea,
+  .dog-list.locked .dog-row input{ pointer-events:none; }
+  .lock-banner{ background:var(--warn-bg); color:var(--warn); padding:9px 11px; border-radius:9px; font-weight:600; font-size:12.5px; margin-bottom:10px; line-height:1.4; }
+
+  .row-group-tag{ font-weight:400; font-size:11px; color:var(--ink-soft); }
+
+  .pin-input{ width:100%; font-size:24px; letter-spacing:12px; text-align:center; border:1px solid var(--line); border-radius:9px; padding:12px; margin-bottom:10px; }
+  .full-btn{ width:100%; }
+
+  .add-dog-stack{ display:flex; flex-direction:column; gap:8px; margin-bottom:8px; }
+  .add-dog-stack .row2{ display:flex; gap:8px; }
+  .add-dog-stack select, .bulk-add-area + select, select.group-select{ border:1px solid var(--line); border-radius:9px; padding:9px 8px; font-size:13.5px; background:var(--surface); flex:1; }
+
+  .roster-group-heading{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:var(--primary-dark); margin:12px 0 4px; }
+  .roster-row-controls{ display:flex; gap:6px; align-items:center; }
+  .roster-row-controls select{ font-size:12px; border:1px solid var(--line); border-radius:6px; padding:4px; background:var(--surface); }
+
+  @media (prefers-reduced-motion: reduce){ .progress-fill{ transition:none; } }
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="topbar">
+    <div>
+      <span class="brand-mark">🐾</span>
+      <h1 id="shelterTitle">Shelter Care Log</h1>
+    </div>
+    <div class="icon-btn-row">
+      <button id="refreshBtn" class="icon-btn" aria-label="Refresh shared data" title="Refresh">⟳</button>
+      <button id="adminLockBtn" class="icon-btn" aria-label="Leader access" title="Leader access">🔒</button>
+      <button id="rosterBtn" class="icon-btn" aria-label="Settings and dog roster">⚙</button>
+    </div>
+  </header>
+
+  <div id="syncBanner" class="sync-banner ok"></div>
+
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="log">Today's Log</button>
+    <button class="tab-btn" data-tab="overview">Monthly Overview</button>
+  </nav>
+
+  <main>
+    <section id="tab-log" class="tab-panel active">
+      <div class="log-controls">
+        <button id="prevDay" class="nav-arrow" aria-label="Previous day">‹</button>
+        <input type="date" id="datePicker">
+        <button id="nextDay" class="nav-arrow" aria-label="Next day">›</button>
+        <div class="shift-toggle">
+          <button class="shift-btn" data-shift="AM">☀ AM shift</button>
+          <button class="shift-btn" data-shift="PM">🌙 PM shift</button>
+        </div>
+      </div>
+
+      <div class="progress-wrap">
+        <div class="progress-top"><span id="progressText">0 / 0 logged</span></div>
+        <div class="progress-track"><div id="progressFill" class="progress-fill" style="width:0%"></div></div>
+      </div>
+
+      <div class="filter-row">
+        <input type="text" id="searchInput" placeholder="Search dog name…">
+        <button id="unloggedToggle" class="chip-toggle" type="button">Unlogged only</button>
+      </div>
+
+      <div class="legend-strip">
+        <span class="legend-item"><span class="legend-dot dot-hard"></span>1 Hard</span>
+        <span class="legend-item"><span class="legend-dot dot-ideal"></span>2–3 Ideal</span>
+        <span class="legend-item"><span class="legend-dot dot-soft"></span>4 Soft</span>
+        <span class="legend-item"><span class="legend-dot dot-loose"></span>5–6 Loose</span>
+        <span class="legend-item"><span class="legend-dot dot-watery"></span>7 Watery</span>
+        <button id="guideInfoBtn" class="legend-info-btn" type="button" aria-label="Fecal score guide">i</button>
+      </div>
+
+      <div class="group-filter-row" id="groupFilterRow">
+        <button class="chip-toggle active" data-group="" type="button">All groups</button>
+        <button class="chip-toggle" data-group="Shep" type="button">Shep</button>
+        <button class="chip-toggle" data-group="Honest" type="button">Honest</button>
+        <button class="chip-toggle" data-group="Kuhlbear" type="button">Kuhlbear</button>
+        <button class="chip-toggle" data-group="Twinkle" type="button">Twinkle</button>
+        <button class="chip-toggle" data-group="Haven" type="button">Haven</button>
+      </div>
+
+      <p id="lockBanner" class="lock-banner" hidden>🔒 Viewing a past date — read-only. Ask a leader to unlock leader access to make changes.</p>
+
+      <div id="dogList" class="dog-list"></div>
+    </section>
+
+    <section id="tab-overview" class="tab-panel">
+      <div class="overview-controls">
+        <input type="month" id="monthPicker">
+        <button id="exportCsvBtn" class="secondary-btn">Export CSV</button>
+      </div>
+      <div class="group-filter-row" id="overviewGroupFilterRow">
+        <button class="chip-toggle active" data-group="" type="button">All groups</button>
+        <button class="chip-toggle" data-group="Shep" type="button">Shep</button>
+        <button class="chip-toggle" data-group="Honest" type="button">Honest</button>
+        <button class="chip-toggle" data-group="Kuhlbear" type="button">Kuhlbear</button>
+        <button class="chip-toggle" data-group="Twinkle" type="button">Twinkle</button>
+        <button class="chip-toggle" data-group="Haven" type="button">Haven</button>
+      </div>
+      <div id="overviewCards" class="overview-cards"></div>
+    </section>
+  </main>
+</div>
+
+<!-- Roster / settings modal -->
+<div id="rosterModal" class="modal-overlay" hidden>
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Settings &amp; dogs</h2>
+      <button id="closeRoster" class="icon-btn" aria-label="Close" style="background:var(--surface-2);color:var(--ink);">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="settings-block" id="rosterUnlockPrompt">
+        <p class="footnote" style="margin-top:0;">Adding dogs, changing groups, and editing past logs requires leader access.</p>
+        <button id="openPinFromRoster" class="secondary-btn full-btn" type="button">🔒 Unlock leader access</button>
+      </div>
+
+      <div id="adminOnlyBlock" hidden>
+        <div class="settings-block">
+          <label for="shelterNameInput">Shelter / site name</label>
+          <input type="text" id="shelterNameInput" placeholder="Shelter Care Log">
+        </div>
+
+        <div class="settings-block">
+          <label>Add a dog</label>
+          <div class="add-dog-stack">
+            <input type="text" id="newDogName" placeholder="Dog's name">
+            <div class="row2">
+              <select id="newDogGroup" class="group-select">
+                <option value="Shep">Shep</option>
+                <option value="Honest">Honest</option>
+                <option value="Kuhlbear">Kuhlbear</option>
+                <option value="Twinkle">Twinkle</option>
+                <option value="Haven">Haven</option>
+              </select>
+              <button id="addDogBtn">Add</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-block">
+          <label>Or paste a list — one name per line (all go into the group below)</label>
+          <select id="bulkAddGroup" class="group-select" style="width:100%;margin-bottom:8px;">
+            <option value="Shep">Shep</option>
+            <option value="Honest">Honest</option>
+            <option value="Kuhlbear">Kuhlbear</option>
+            <option value="Twinkle">Twinkle</option>
+            <option value="Haven">Haven</option>
+          </select>
+          <textarea id="bulkAddArea" class="bulk-add-area" placeholder="Leo&#10;Layla&#10;Rainbow&#10;..."></textarea>
+          <button id="bulkAddBtn" class="bulk-add-btn full-btn">Add all to this group</button>
+        </div>
+
+        <div class="settings-block">
+          <label>Change leader PIN</label>
+          <div class="add-dog-row">
+            <input type="tel" inputmode="numeric" maxlength="4" id="newPinInput" placeholder="New 4-digit PIN">
+            <button id="savePinBtn">Save</button>
+          </div>
+        </div>
+
+        <button id="relockBtn" class="secondary-btn full-btn" type="button" style="margin-bottom:6px;">🔒 Lock leader access</button>
+      </div>
+
+      <div class="settings-block">
+        <label>Roster (<span id="rosterCount">0</span>)</label>
+        <div id="rosterGroupedList"></div>
+      </div>
+
+      <hr>
+      <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--ink-soft);margin-bottom:8px;">How this stays in sync</label>
+      <p class="footnote">Everyone who opens this file shares the same live data through a small Google Sheet backend — no Claude account needed for anyone. If the banner at the top says data isn't syncing, double-check the Apps Script deployment is set to "Anyone" access and that its URL is correctly pasted into this file.</p>
+      <p class="footnote">Heads up: the leader PIN is a convenience lock, not strong security — it keeps casual edits out, but anyone determined enough to inspect the page code could get past it. Don't use it to gate anything more sensitive than this roster.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Admin PIN modal -->
+<div id="pinModal" class="modal-overlay" hidden>
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Leader access</h2>
+      <button id="closePinModal" class="icon-btn" aria-label="Close" style="background:var(--surface-2);color:var(--ink);">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="footnote" style="margin-top:0;">Enter the 4-digit leader PIN to manage the roster, groups, and edit past logs.</p>
+      <input type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="4" id="pinInput" placeholder="••••" class="pin-input">
+      <button id="pinSubmitBtn" class="bulk-add-btn full-btn">Unlock</button>
+      <p id="pinError" class="footnote" style="color:var(--status-diarrhea);margin-top:8px;" hidden>Incorrect PIN — try again.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Dog detail modal (Overview) -->
+<div id="detailModal" class="modal-overlay" hidden>
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="detailDogName">Dog</h2>
+      <button id="closeDetail" class="icon-btn" aria-label="Close" style="background:var(--surface-2);color:var(--ink);">✕</button>
+    </div>
+    <div class="modal-body" id="detailBody"></div>
+  </div>
+</div>
+
+<!-- Fecal score guide modal -->
+<div id="guideModal" class="modal-overlay" hidden>
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Fecal score guide</h2>
+      <button id="closeGuide" class="icon-btn" aria-label="Close" style="background:var(--surface-2);color:var(--ink);">✕</button>
+    </div>
+    <div class="modal-body" id="guideBody"></div>
+  </div>
+</div>
+
+<!-- Photo lightbox -->
+<div id="lightboxModal" class="modal-overlay" hidden>
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Photo</h2>
+      <button id="closeLightbox" class="icon-btn" aria-label="Close" style="background:var(--surface-2);color:var(--ink);">✕</button>
+    </div>
+    <div class="modal-body"><img id="lightboxImg" class="lightbox-img" alt="Stool photo"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- constants ----------
+  var TIER_LABEL = { hard:"Hard", ideal:"Ideal", soft:"Soft", loose:"Loose", watery:"Watery" };
+  var REMEDY_LABEL = { probiotic:"Probiotic given", charcoal:"Charcoal pill given", none:"No remedy yet" };
+  var MEAL_LABEL = { usual:"Usual meal", riceChicken:"Rice & chicken" };
+  var APPETITE_LABEL = { full:"Full", "3/4":"¾ cup", "1/2":"½ cup", "1/4":"¼ cup", none:"None" };
+  var GUIDE_DATA = [
+    { n:1, tier:"hard", title:"Hard & dry", text:"Small, hard pellets that take effort to pass. Can point to dehydration or low fibre." },
+    { n:2, tier:"ideal", title:"Firm", text:"Holds a clear shape with a little give, and leaves minimal residue." },
+    { n:3, tier:"ideal", title:"Ideal", text:"Log-shaped, holds together fully, easy to pick up cleanly." },
+    { n:4, tier:"soft", title:"Soft", text:"Holds a shape but flattens easily; may leave a slight residue." },
+    { n:5, tier:"loose", title:"Loose", text:"Loses its shape into a pile; noticeable residue left behind." },
+    { n:6, tier:"loose", title:"Very loose", text:"Textured but mostly formless; may look mushy." },
+    { n:7, tier:"watery", title:"Watery", text:"No solid form at all — pools or puddles." }
+  ];
+  var TIER_COLOR = { hard:"var(--status-soft)", ideal:"var(--status-normal)", soft:"var(--status-soft)", loose:"var(--status-loose)", watery:"var(--status-diarrhea)" };
+  var GROUPS = ["Shep","Honest","Kuhlbear","Twinkle","Haven"];
+
+  function scoreToTier(score){
+    if(score===1) return "hard";
+    if(score===2||score===3) return "ideal";
+    if(score===4) return "soft";
+    if(score===5||score===6) return "loose";
+    if(score===7) return "watery";
+    return "";
+  }
+
+  // ---------- app state ----------
+  var config = { shelterName:"Shelter Care Log", adminPin:"1234", dogs:[] }; // dogs: [{name, group}]
+  var monthCache = {};       // "yyyy-mm:dogname" -> {"01":{AM:{},PM:{}}, ...}
+  var currentDate, currentShift, todayStr;
+  var searchTerm = "";
+  var unloggedOnly = false;
+  var groupFilter = "";
+  var overviewGroupFilter = "";
+  var storageOk = null;
+  var isAdmin = false;
+
+  function findDog(name){ return config.dogs.find(function(d){ return d.name===name; }); }
+  function dogNames(){ return config.dogs.map(function(d){ return d.name; }); }
+  function readOnlyMode(){ return currentDate !== todayStr && !isAdmin; }
+
+  var dateInput = document.getElementById("datePicker");
+  var monthPicker = document.getElementById("monthPicker");
+  var dogListEl = document.getElementById("dogList");
+  var overviewCardsEl = document.getElementById("overviewCards");
+  var shelterTitleEl = document.getElementById("shelterTitle");
+  var syncBanner = document.getElementById("syncBanner");
+
+  // ---------- utils ----------
+  function pad(n){ return String(n).padStart(2,"0"); }
+  function fmtDate(d){ return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
+  function parseDate(s){ return new Date(s+"T12:00:00"); }
+  function escapeHtml(str){
+    return String(str==null?"":str).replace(/[&<>"']/g, function(m){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m];
+    });
+  }
+  function daysInMonth(y,m){ return new Date(y,m,0).getDate(); }
+  function prettyDate(dateStr){
+    return parseDate(dateStr).toLocaleDateString(undefined, { weekday:"short", month:"short", day:"numeric" });
+  }
+  function monthKeyOf(dateStr){ return dateStr.slice(0,7); }
+  function dayKeyOf(dateStr){ return dateStr.slice(8,10); }
+  function csvEscape(v){
+    v = String(v==null?"":v);
+    if(/[",\n]/.test(v)) return '"'+v.replace(/"/g,'""')+'"';
+    return v;
+  }
+  function debounce(fn, wait){
+    var t;
+    return function(){
+      var args = arguments, ctx = this;
+      clearTimeout(t);
+      t = setTimeout(function(){ fn.apply(ctx, args); }, wait);
+    };
+  }
+  function showToast(message){
+    var el = document.createElement("div");
+    el.textContent = message;
+    el.style.cssText = "position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#1E2E28;color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;z-index:99;box-shadow:0 4px 14px rgba(0,0,0,0.25);max-width:88%;text-align:center;";
+    document.body.appendChild(el);
+    setTimeout(function(){ el.remove(); }, 3200);
+  }
+
+  // ---------- storage layer (Google Apps Script + Sheet backend) ----------
+  // Paste the Web app URL from your Apps Script deployment below.
+  var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx6qBCT-9j68BBSmjSHlan-7l_p1wzP-_98PhzXoKIgFFS2BZq4zBR5Zpqc7cKTrk3e/exec";
+
+  function hasStorage(){ return !!SCRIPT_URL && SCRIPT_URL.indexOf("PASTE_YOUR") === -1; }
+
+  async function apiCall(action, payload){
+    if(!hasStorage()) return null;
+    try{
+      var body = Object.assign({ action:action }, payload || {});
+      var res = await fetch(SCRIPT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(body)
+      });
+      if(!res.ok) return null;
+      return await res.json();
+    }catch(e){
+      return null;
+    }
+  }
+  async function storageGet(key){
+    var r = await apiCall("get", { key:key });
+    return (r && r.found) ? r.value : null;
+  }
+  async function storageSet(key, value){
+    var r = await apiCall("set", { key:key, value:value });
+    return !!(r && r.success);
+  }
+  async function storageDelete(key){
+    var r = await apiCall("delete", { key:key });
+    return !!(r && r.success);
+  }
+  async function storageSavePhoto(key, dataUrl){
+    var base64 = (dataUrl.split(",")[1]) || "";
+    var r = await apiCall("savePhoto", { key:key, dataBase64:base64 });
+    return !!(r && r.success);
+  }
+  async function storageGetPhoto(key){
+    var r = await apiCall("getPhoto", { key:key });
+    return (r && r.found) ? ("data:image/jpeg;base64,"+r.dataBase64) : null;
+  }
+  async function storageDeletePhoto(key){
+    var r = await apiCall("deletePhoto", { key:key });
+    return !!(r && r.success);
+  }
+
+  async function testStorage(){
+    if(!hasStorage()){ storageOk = false; renderSyncBanner(); return; }
+    var ok = await storageSet("__ping__", String(Date.now()));
+    storageOk = ok;
+    renderSyncBanner();
+  }
+
+  function renderSyncBanner(){
+    if(storageOk === true){
+      syncBanner.classList.add("ok");
+      syncBanner.textContent = "";
+    } else if(storageOk === false){
+      syncBanner.classList.remove("ok");
+      syncBanner.textContent = hasStorage()
+        ? "⚠ Not syncing — check the Google Sheet backend is deployed with \"Anyone\" access."
+        : "⚠ Not set up yet — the Google Sheet backend URL hasn't been added to this file.";
+    }
+  }
+
+  async function loadConfig(){
+    var fallback = { shelterName:"Shelter Care Log", adminPin:"1234", dogs:[] };
+    if(!hasStorage()) return fallback;
+    var value = await storageGet("config");
+    if(value){
+      try{
+        var parsed = JSON.parse(value);
+        if(parsed && Array.isArray(parsed.dogs)){
+          parsed.dogs = parsed.dogs.map(function(d){
+            return (typeof d === "string") ? { name:d, group:GROUPS[0] } : d;
+          });
+          if(!parsed.adminPin) parsed.adminPin = "1234";
+          return parsed;
+        }
+      }catch(e){}
+    }
+    return fallback;
+  }
+  async function saveConfig(){
+    if(!hasStorage()) return false;
+    return await storageSet("config", JSON.stringify(config));
+  }
+
+  async function loadMonthForDog(yyyymm, dog){
+    var cacheKey = yyyymm+":"+dog;
+    if(monthCache[cacheKey]) return monthCache[cacheKey];
+    var data = {};
+    if(hasStorage()){
+      var value = await storageGet("month:"+yyyymm+":"+dog);
+      if(value){
+        try{ data = JSON.parse(value); }catch(e){}
+      }
+    }
+    monthCache[cacheKey] = data;
+    return data;
+  }
+  async function loadMonthForAllDogs(yyyymm, forceNames){
+    var list = forceNames || dogNames();
+    await Promise.all(list.map(function(name){ return loadMonthForDog(yyyymm, name); }));
+  }
+  async function saveMonthForDog(yyyymm, dog){
+    if(!hasStorage()) return false;
+    var cacheKey = yyyymm+":"+dog;
+    var data = monthCache[cacheKey] || {};
+    return await storageSet("month:"+yyyymm+":"+dog, JSON.stringify(data));
+  }
+
+  function getDayEntry(dog, dateStr, shift){
+    var monthObj = monthCache[monthKeyOf(dateStr)+":"+dog] || {};
+    var day = dayKeyOf(dateStr);
+    return (monthObj[day] && monthObj[day][shift]) || {};
+  }
+  async function setDayEntry(dog, dateStr, shift, patch){
+    var cacheKey = monthKeyOf(dateStr)+":"+dog;
+    if(!monthCache[cacheKey]) monthCache[cacheKey] = {};
+    var monthObj = monthCache[cacheKey];
+    var day = dayKeyOf(dateStr);
+    if(!monthObj[day]) monthObj[day] = {};
+    if(!monthObj[day][shift]) monthObj[day][shift] = {};
+    Object.assign(monthObj[day][shift], patch);
+    var ok = await saveMonthForDog(monthKeyOf(dateStr), dog);
+    if(!ok) showToast("Couldn't save that change — check your connection and try again.");
+    return ok;
+  }
+  function entryIsBlank(entry){
+    return !entry || (!entry.score && !entry.appetite && !entry.note && !entry.skip && !entry.remedy && !entry.meal && !entry.hasPhoto);
+  }
+  function isHandled(dog, dateStr, shift){
+    var e = getDayEntry(dog, dateStr, shift);
+    return !!e.skip || !entryIsBlank(e);
+  }
+
+  async function savePhoto(dog, dateStr, shift, dataUrl){
+    if(!hasStorage()) return false;
+    var key = "photo:"+dateStr+":"+shift+":"+dog;
+    var ok = await storageSavePhoto(key, dataUrl);
+    if(ok){ await setDayEntry(dog, dateStr, shift, { hasPhoto:true }); return true; }
+    return false;
+  }
+  async function loadPhoto(dog, dateStr, shift){
+    if(!hasStorage()) return null;
+    var key = "photo:"+dateStr+":"+shift+":"+dog;
+    return await storageGetPhoto(key);
+  }
+  async function deletePhoto(dog, dateStr, shift){
+    var key = "photo:"+dateStr+":"+shift+":"+dog;
+    if(hasStorage()) await storageDeletePhoto(key);
+    await setDayEntry(dog, dateStr, shift, { hasPhoto:false });
+  }
+
+  // ---------- image compression ----------
+  function compressImageFile(file, maxDim, quality){
+    return new Promise(function(resolve, reject){
+      var reader = new FileReader();
+      reader.onload = function(e){
+        var img = new Image();
+        img.onload = function(){
+          var w = img.width, h = img.height;
+          if(w > h){ if(w > maxDim){ h = Math.round(h*maxDim/w); w = maxDim; } }
+          else{ if(h > maxDim){ w = Math.round(w*maxDim/h); h = maxDim; } }
+          var canvas = document.createElement("canvas");
+          canvas.width = w; canvas.height = h;
+          var ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL("image/jpeg", quality));
+        };
+        img.onerror = function(){ reject(new Error("Could not read image")); };
+        img.src = e.target.result;
+      };
+      reader.onerror = function(){ reject(new Error("Could not read file")); };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // ---------- Log tab ----------
+  function buildDogRow(dog, dateStr, shift, expanded){
+    var entry = getDayEntry(dog, dateStr, shift);
+    var row = document.createElement("div");
+    row.className = "dog-row";
+
+    var dogGroup = (findDog(dog)||{}).group || "";
+    var groupTagHtml = dogGroup ? ' <span class="row-group-tag">· '+escapeHtml(dogGroup)+'</span>' : "";
+
+    if(entry.skip){
+      row.innerHTML =
+        '<div class="row-top">'+
+          '<span class="row-name">'+escapeHtml(dog)+groupTagHtml+'</span>'+
+          '<button type="button" class="skip-icon-btn active" title="Not present this shift">🚫</button>'+
+        '</div>'+
+        '<div class="skip-line">'+
+          '<span class="skip-note">Not present this shift</span>'+
+          '<button type="button" class="undo-skip">Undo</button>'+
+        '</div>';
+      row.querySelector(".skip-icon-btn").addEventListener("click", function(){ toggleSkip(dog, dateStr, shift, row); });
+      row.querySelector(".undo-skip").addEventListener("click", function(){ toggleSkip(dog, dateStr, shift, row); });
+      return row;
+    }
+
+    var score = entry.score || null;
+    var tier = score ? scoreToTier(score) : "";
+    var chipText = score ? ("Score "+score+" · "+TIER_LABEL[tier]) : "Not logged";
+    if(score===1) chipText = "Score 1 · Hard — check water";
+    if(entry.remedy && entry.remedy!=="none") chipText += " · 💊";
+    if(entry.note && entry.note.trim()) chipText += " · 📝";
+    if(entry.hasPhoto) chipText += " · 📷";
+
+    var showRemedy = (score>=4);
+    var showHardHint = (score===1);
+
+    function scoreBtn(n){
+      var t = scoreToTier(n);
+      var active = (score===n) ? (" active tier-"+t) : "";
+      return '<button type="button" data-val="'+n+'" class="'+active+'">'+n+'</button>';
+    }
+
+    var bodyHtml =
+      (showRemedy ? (
+        '<div class="remedy-block field-group">'+
+          '<label>Remedy given</label>'+
+          '<div class="btn-group remedy-group">'+
+            '<button type="button" data-field="remedy" data-val="probiotic" class="'+(entry.remedy==="probiotic"?"active":"")+'">💊 Probiotic</button>'+
+            '<button type="button" data-field="remedy" data-val="charcoal" class="'+(entry.remedy==="charcoal"?"active":"")+'">⚫ Charcoal pill</button>'+
+            '<button type="button" data-field="remedy" data-val="none" class="'+(entry.remedy==="none"?"active":"")+'">Not yet</button>'+
+          '</div>'+
+        '</div>'
+      ) : "") +
+      (showHardHint ? '<div class="hard-hint">Very hard/dry — check water intake. Probiotic/charcoal isn\'t needed for this one.</div>' : "") +
+      '<div class="field-group">'+
+        '<label>Meal</label>'+
+        '<div class="btn-group meal-group">'+
+          '<button type="button" data-field="meal" data-val="usual" class="'+(entry.meal==="usual"?"active":"")+'">Usual</button>'+
+          '<button type="button" data-field="meal" data-val="riceChicken" class="'+(entry.meal==="riceChicken"?"active":"")+'">Rice &amp; chicken</button>'+
+        '</div>'+
+      '</div>'+
+      '<div class="field-group">'+
+        '<label>Appetite</label>'+
+        '<div class="btn-group appetite-group">'+
+          '<button type="button" data-field="appetite" data-val="full" class="'+(entry.appetite==="full"?"active":"")+'">Full</button>'+
+          '<button type="button" data-field="appetite" data-val="3/4" class="'+(entry.appetite==="3/4"?"active":"")+'">¾ cup</button>'+
+          '<button type="button" data-field="appetite" data-val="1/2" class="'+(entry.appetite==="1/2"?"active":"")+'">½ cup</button>'+
+          '<button type="button" data-field="appetite" data-val="1/4" class="'+(entry.appetite==="1/4"?"active":"")+'">¼ cup</button>'+
+          '<button type="button" data-field="appetite" data-val="none" class="'+(entry.appetite==="none"?"active":"")+'">None</button>'+
+        '</div>'+
+        '<textarea class="appetite-note" placeholder="Optional note — e.g. only ate chicken, ate slowly...">'+escapeHtml(entry.note||"")+'</textarea>'+
+      '</div>'+
+      '<div class="field-group photo-group">'+
+        '<label>Photo (optional)</label>'+
+        '<div class="photo-area">'+
+          (entry.hasPhoto ?
+            '<div class="photo-thumb-wrap"><img class="photo-thumb loading" alt="Stool photo"><button type="button" class="photo-remove-btn" title="Remove photo">✕</button></div>'
+            : '<button type="button" class="photo-add-btn">📷 Add photo</button>'
+          ) +
+          '<input type="file" accept="image/*" capture="environment" class="photo-input" hidden>'+
+        '</div>'+
+        '<p class="hint">For unusual or concerning stools — most entries won\'t need one.</p>'+
+      '</div>';
+
+    row.innerHTML =
+      '<div class="row-top">'+
+        '<span class="row-name">'+escapeHtml(dog)+groupTagHtml+'</span>'+
+        '<button type="button" class="skip-icon-btn" title="Not present this shift">🚫</button>'+
+      '</div>'+
+      '<div class="btn-group score-group">'+
+        [1,2,3,4,5,6,7].map(scoreBtn).join("")+
+      '</div>'+
+      '<div class="row-chip-line">'+
+        '<span class="row-chip'+(tier?(" tier-"+tier):"")+'">'+chipText+'</span>'+
+        '<button type="button" class="more-toggle">'+(expanded?"– hide details":"+ appetite, notes, photo")+'</button>'+
+      '</div>'+
+      '<div class="row-body"'+(expanded?"":" hidden")+'>'+bodyHtml+'</div>';
+
+    attachRowListeners(row, dog, dateStr, shift);
+
+    if(entry.hasPhoto && expanded){
+      var thumbImg = row.querySelector(".photo-thumb");
+      if(thumbImg){
+        loadPhoto(dog, dateStr, shift).then(function(dataUrl){
+          if(dataUrl){ thumbImg.src = dataUrl; thumbImg.classList.remove("loading"); }
+        });
+      }
+    }
+    return row;
+  }
+
+  function toggleSkip(dog, dateStr, shift, rowEl){
+    var entry = getDayEntry(dog, dateStr, shift);
+    setDayEntry(dog, dateStr, shift, { skip: !entry.skip }).then(function(){
+      var fresh = buildDogRow(dog, dateStr, shift, false);
+      rowEl.replaceWith(fresh);
+      updateProgressBar();
+    });
+  }
+
+  var debouncedNoteSave = debounce(function(dog, dateStr, shift, value){
+    setDayEntry(dog, dateStr, shift, { note: value });
+  }, 600);
+
+  function attachRowListeners(row, dog, dateStr, shift){
+    row.querySelector(".skip-icon-btn").addEventListener("click", function(){ toggleSkip(dog, dateStr, shift, row); });
+
+    var scoreButtons = row.querySelectorAll(".score-group button");
+    scoreButtons.forEach(function(btn){
+      btn.addEventListener("click", function(){
+        var current = getDayEntry(dog, dateStr, shift);
+        var val = Number(btn.dataset.val);
+        var newVal = (current.score === val) ? null : val;
+        var wasExpanded = !row.querySelector(".row-body").hidden;
+        var patch = { score:newVal };
+        if(newVal>=4){ patch.meal = "riceChicken"; }
+        setDayEntry(dog, dateStr, shift, patch).then(function(){
+          var expand = wasExpanded || (newVal>=4);
+          var fresh = buildDogRow(dog, dateStr, shift, expand);
+          row.replaceWith(fresh);
+          updateProgressBar();
+        });
+      });
+    });
+
+    var moreBtn = row.querySelector(".more-toggle");
+    if(moreBtn){
+      moreBtn.addEventListener("click", function(){
+        var wasExpanded = !row.querySelector(".row-body").hidden;
+        var fresh = buildDogRow(dog, dateStr, shift, !wasExpanded);
+        row.replaceWith(fresh);
+      });
+    }
+
+    var otherFieldButtons = row.querySelectorAll("[data-field]");
+    otherFieldButtons.forEach(function(btn){
+      btn.addEventListener("click", function(){
+        var field = btn.dataset.field, val = btn.dataset.val;
+        var current = getDayEntry(dog, dateStr, shift);
+        var newVal = (current[field]===val) ? null : val;
+        var patch = {}; patch[field] = newVal;
+        setDayEntry(dog, dateStr, shift, patch).then(function(){
+          var fresh = buildDogRow(dog, dateStr, shift, true);
+          row.replaceWith(fresh);
+          updateProgressBar();
+        });
+      });
+    });
+
+    var noteEl = row.querySelector(".appetite-note");
+    if(noteEl){
+      noteEl.addEventListener("input", function(e){
+        debouncedNoteSave(dog, dateStr, shift, e.target.value);
+      });
+    }
+
+    var photoAddBtn = row.querySelector(".photo-add-btn");
+    var photoInput = row.querySelector(".photo-input");
+    if(photoAddBtn && photoInput){
+      photoAddBtn.addEventListener("click", function(){ photoInput.click(); });
+      photoInput.addEventListener("change", function(e){
+        var file = e.target.files[0];
+        if(!file) return;
+        photoAddBtn.textContent = "Compressing…";
+        photoAddBtn.disabled = true;
+        compressImageFile(file, 640, 0.55).then(function(dataUrl){
+          return savePhoto(dog, dateStr, shift, dataUrl);
+        }).then(function(ok){
+          if(!ok) showToast("Couldn't save the photo — try again.");
+          var fresh = buildDogRow(dog, dateStr, shift, true);
+          row.replaceWith(fresh);
+          updateProgressBar();
+        }).catch(function(){
+          showToast("Couldn't read that photo — try a different one.");
+          photoAddBtn.textContent = "📷 Add photo";
+          photoAddBtn.disabled = false;
+        });
+      });
+    }
+    var photoRemoveBtn = row.querySelector(".photo-remove-btn");
+    if(photoRemoveBtn){
+      photoRemoveBtn.addEventListener("click", function(){
+        deletePhoto(dog, dateStr, shift).then(function(){
+          var fresh = buildDogRow(dog, dateStr, shift, true);
+          row.replaceWith(fresh);
+        });
+      });
+    }
+  }
+
+  function updateProgressBar(){
+    var relevant = groupFilter ? config.dogs.filter(function(d){ return d.group===groupFilter; }) : config.dogs;
+    var total = relevant.length;
+    var done = 0;
+    relevant.forEach(function(d){ if(isHandled(d.name, currentDate, currentShift)) done++; });
+    document.getElementById("progressText").textContent = done+" / "+total+" logged"+(groupFilter?(" · "+groupFilter):"");
+    document.getElementById("progressFill").style.width = total ? Math.round(done/total*100)+"%" : "0%";
+  }
+
+  function renderDogList(){
+    dogListEl.classList.toggle("locked", readOnlyMode());
+    document.getElementById("lockBanner").hidden = !readOnlyMode();
+    dogListEl.innerHTML = "";
+    if(config.dogs.length === 0){
+      dogListEl.innerHTML = '<p class="empty-state">No dogs in the roster yet.<br>Unlock leader access (🔒) then tap ⚙ to add your first dog, or paste your whole list at once.</p>';
+      updateProgressBar();
+      return;
+    }
+    var term = searchTerm.trim().toLowerCase();
+    var visible = config.dogs.filter(function(d){
+      if(groupFilter && d.group!==groupFilter) return false;
+      if(term && d.name.toLowerCase().indexOf(term) === -1) return false;
+      if(unloggedOnly && isHandled(d.name, currentDate, currentShift)) return false;
+      return true;
+    });
+    if(visible.length === 0){
+      dogListEl.innerHTML = '<p class="empty-state">No dogs match this view.</p>';
+    } else {
+      visible.forEach(function(d){
+        dogListEl.appendChild(buildDogRow(d.name, currentDate, currentShift, false));
+      });
+    }
+    updateProgressBar();
+  }
+
+  async function ensureMonthLoaded(dateStr, showSpinner){
+    var yyyymm = monthKeyOf(dateStr);
+    var needsFetch = dogNames().some(function(n){ return !monthCache[yyyymm+":"+n]; });
+    if(needsFetch && showSpinner){
+      dogListEl.innerHTML = '<p class="loading-state">Loading shared data…</p>';
+    }
+    await loadMonthForAllDogs(yyyymm);
+  }
+
+  async function goToDate(newDateStr){
+    currentDate = newDateStr;
+    dateInput.value = currentDate;
+    await ensureMonthLoaded(currentDate, true);
+    renderDogList();
+  }
+
+  async function forceRefresh(){
+    var yyyymm = monthKeyOf(currentDate);
+    dogNames().forEach(function(n){ delete monthCache[yyyymm+":"+n]; });
+    dogListEl.innerHTML = '<p class="loading-state">Refreshing…</p>';
+    await loadMonthForAllDogs(yyyymm);
+    renderDogList();
+    if(document.getElementById("tab-overview").classList.contains("active")) renderOverview();
+  }
+
+  // ---------- Overview tab ----------
+  function computeMonthStats(dog, year, month){
+    var total = daysInMonth(year, month);
+    var counts = { hard:0, ideal:0, soft:0, loose:0, watery:0, skip:0 };
+    var probiotic = 0, charcoal = 0;
+    var issues = [];
+    var calendar = [];
+    for(var d=1; d<=total; d++){
+      var dateStr = year+"-"+pad(month)+"-"+pad(d);
+      var dayObj = { day:d, AM:null, PM:null };
+      ["AM","PM"].forEach(function(shift){
+        var entry = getDayEntry(dog, dateStr, shift);
+        if(entry.skip){ counts.skip++; dayObj[shift] = "skip"; return; }
+        if(entry.score){
+          var tier = scoreToTier(entry.score);
+          counts[tier] = (counts[tier]||0)+1;
+          dayObj[shift] = tier;
+        }
+        if(entry.remedy==="probiotic") probiotic++;
+        if(entry.remedy==="charcoal") charcoal++;
+        var poorAppetite = entry.appetite && entry.appetite!=="full";
+        var hasNote = entry.note && entry.note.trim().length>0;
+        if(poorAppetite || hasNote || (entry.score>=5)){
+          issues.push({ date:dateStr, shift:shift, score:entry.score, remedy:entry.remedy, appetite:entry.appetite, note:entry.note, hasPhoto:entry.hasPhoto });
+        }
+      });
+      calendar.push(dayObj);
+    }
+    var concernScore = counts.watery*2 + counts.loose*1 + counts.soft*0.5 + counts.hard*0.5 + issues.length*0.5;
+    var wellbeing;
+    if(counts.watery>=2 || concernScore>=8) wellbeing = "attention";
+    else if(concernScore>=3) wellbeing = "watch";
+    else wellbeing = "good";
+    issues.sort(function(a,b){ return a.date===b.date ? (a.shift<b.shift?1:-1) : (a.date<b.date?1:-1); });
+    return { counts:counts, probiotic:probiotic, charcoal:charcoal, issues:issues, calendar:calendar, wellbeing:wellbeing };
+  }
+  var WELLBEING_LABEL = { good:"Doing well", watch:"Some concerns", attention:"Needs attention" };
+
+  function buildCalGrid(calendar, year, month){
+    var firstDow = new Date(year, month-1, 1).getDay();
+    var html = '<div class="cal-grid">';
+    for(var i=0;i<firstDow;i++) html += '<div class="cal-day"></div>';
+    calendar.forEach(function(dayObj){
+      function dotClass(v){ return v ? (" dot-"+v) : ""; }
+      html += '<div class="cal-day"><span class="cal-daynum">'+dayObj.day+'</span>'+
+        '<span class="cal-dot'+dotClass(dayObj.AM)+'"></span>'+
+        '<span class="cal-dot'+dotClass(dayObj.PM)+'"></span></div>';
+    });
+    html += '</div>';
+    return html;
+  }
+
+  function buildOverviewCard(dog, stats, isFormer, year, month){
+    var card = document.createElement("button");
+    card.type = "button";
+    card.className = "overview-card";
+    var dogGroup = (findDog(dog)||{}).group || "";
+    card.innerHTML =
+      '<div class="ov-head">'+
+        '<h3>'+escapeHtml(dog)+(dogGroup?' <span class="row-group-tag">· '+escapeHtml(dogGroup)+'</span>':'')+(isFormer?' <span class="ov-former">(not in active roster)</span>':'')+'</h3>'+
+        '<span class="badge '+stats.wellbeing+'">'+WELLBEING_LABEL[stats.wellbeing]+'</span>'+
+      '</div>'+
+      buildCalGrid(stats.calendar, year, month)+
+      '<div class="stat-row">'+
+        '<span>Watery: <strong>'+stats.counts.watery+'</strong></span>'+
+        '<span>Loose: <strong>'+stats.counts.loose+'</strong></span>'+
+        '<span>Soft: <strong>'+stats.counts.soft+'</strong></span>'+
+        '<span>Probiotic: <strong>'+stats.probiotic+'</strong></span>'+
+        '<span>Charcoal: <strong>'+stats.charcoal+'</strong></span>'+
+        '<span>Notes: <strong>'+stats.issues.length+'</strong></span>'+
+      '</div>';
+    card.addEventListener("click", function(){ openDetail(dog, stats); });
+    return card;
+  }
+
+  function getAllDogNamesForMonth(){
+    var names = new Set(dogNames());
+    Object.keys(monthCache).forEach(function(cacheKey){
+      var parts = cacheKey.split(":");
+      var dogName = parts.slice(1).join(":");
+      var monthObj = monthCache[cacheKey];
+      var hasAny = Object.keys(monthObj).some(function(day){
+        var d = monthObj[day];
+        return (d.AM && !entryIsBlank(d.AM)) || (d.PM && !entryIsBlank(d.PM));
+      });
+      if(hasAny) names.add(dogName);
+    });
+    return Array.from(names).sort();
+  }
+
+  async function renderOverview(){
+    var parts = monthPicker.value.split("-").map(Number);
+    var year = parts[0], month = parts[1];
+    var yyyymm = monthPicker.value;
+    var needsFetch = dogNames().some(function(n){ return !monthCache[yyyymm+":"+n]; });
+    if(needsFetch) overviewCardsEl.innerHTML = '<p class="loading-state">Loading shared data…</p>';
+    await loadMonthForAllDogs(yyyymm);
+    var dogList = getAllDogNamesForMonth().filter(function(name){
+      if(!overviewGroupFilter) return true;
+      var d = findDog(name);
+      return d && d.group === overviewGroupFilter;
+    });
+    overviewCardsEl.innerHTML = "";
+    if(dogList.length===0){
+      overviewCardsEl.innerHTML = '<p class="empty-state">No dogs logged yet.</p>';
+      return;
+    }
+    dogList.forEach(function(dog){
+      var stats = computeMonthStats(dog, year, month);
+      var isFormer = !findDog(dog);
+      overviewCardsEl.appendChild(buildOverviewCard(dog, stats, isFormer, year, month));
+    });
+  }
+
+  function openDetail(dog, stats){
+    document.getElementById("detailDogName").textContent = dog;
+    var body = document.getElementById("detailBody");
+    var html = '<div class="stat-row" style="border-top:none;padding-top:0;margin-bottom:14px;">'+
+      '<span>Ideal: <strong>'+stats.counts.ideal+'</strong></span>'+
+      '<span>Soft: <strong>'+stats.counts.soft+'</strong></span>'+
+      '<span>Loose: <strong>'+stats.counts.loose+'</strong></span>'+
+      '<span>Watery: <strong>'+stats.counts.watery+'</strong></span>'+
+      '<span>Not present: <strong>'+stats.counts.skip+'</strong></span>'+
+    '</div>';
+    if(stats.issues.length===0){
+      html += '<p class="no-issues">No notable stools or appetite notes this month.</p>';
+    } else {
+      html += '<div class="detail-list">';
+      stats.issues.forEach(function(item, idx){
+        var tags = [];
+        if(item.score) tags.push("Score "+item.score+" · "+TIER_LABEL[scoreToTier(item.score)]);
+        if(item.remedy && item.remedy!=="none") tags.push(REMEDY_LABEL[item.remedy]);
+        if(item.appetite && APPETITE_LABEL[item.appetite]) tags.push("Ate: "+APPETITE_LABEL[item.appetite]);
+        html += '<div class="detail-item" data-idx="'+idx+'">'+
+          '<div class="di-head"><span>'+prettyDate(item.date)+' · '+item.shift+'</span></div>'+
+          (tags.length ? '<div class="di-tags">'+tags.join(" · ")+'</div>' : '')+
+          (item.note ? '<div>'+escapeHtml(item.note)+'</div>' : '')+
+          (item.hasPhoto ? '<button type="button" class="di-photo-btn" data-date="'+item.date+'" data-shift="'+item.shift+'">📷 View photo</button>' : '')+
+        '</div>';
+      });
+      html += '</div>';
+    }
+    body.innerHTML = html;
+    body.querySelectorAll(".di-photo-btn").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        loadPhoto(dog, btn.dataset.date, btn.dataset.shift).then(function(dataUrl){
+          if(dataUrl) openLightbox(dataUrl);
+          else showToast("Couldn't load that photo.");
+        });
+      });
+    });
+    document.getElementById("detailModal").hidden = false;
+  }
+
+  function openLightbox(dataUrl){
+    document.getElementById("lightboxImg").src = dataUrl;
+    document.getElementById("lightboxModal").hidden = false;
+  }
+
+  function exportMonthCsv(){
+    var parts = monthPicker.value.split("-").map(Number);
+    var year = parts[0], month = parts[1];
+    var total = daysInMonth(year, month);
+    var dogList = getAllDogNamesForMonth();
+    var rows = [["Date","Shift","Dog","Group","Fecal Score","Remedy","Meal","Appetite","Note","Photo"]];
+    for(var d=1; d<=total; d++){
+      var dateStr = year+"-"+pad(month)+"-"+pad(d);
+      dogList.forEach(function(dog){
+        ["AM","PM"].forEach(function(shift){
+          var entry = getDayEntry(dog, dateStr, shift);
+          if(entryIsBlank(entry)) return;
+          rows.push([
+            dateStr, shift, dog, (findDog(dog)||{}).group||"",
+            entry.skip ? "Not present" : (entry.score||""),
+            entry.remedy||"", entry.meal||"", entry.appetite||"",
+            (entry.note||"").replace(/\n/g," "),
+            entry.hasPhoto ? "Yes" : ""
+          ]);
+        });
+      });
+    }
+    var csv = rows.map(function(r){ return r.map(csvEscape).join(","); }).join("\n");
+    var blob = new Blob([csv], { type:"text/csv" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url; a.download = monthPicker.value+"-shelter-care-log.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // ---------- Roster / settings ----------
+  function renderRosterList(){
+    document.getElementById("rosterCount").textContent = config.dogs.length;
+    var container = document.getElementById("rosterGroupedList");
+    container.innerHTML = "";
+    if(config.dogs.length===0){
+      container.innerHTML = '<p class="empty-state" style="padding:16px 0;">No dogs yet.</p>';
+      return;
+    }
+    GROUPS.forEach(function(group){
+      var dogsInGroup = config.dogs.filter(function(d){ return d.group===group; })
+        .sort(function(a,b){ return a.name.localeCompare(b.name); });
+      if(dogsInGroup.length===0) return;
+      var heading = document.createElement("div");
+      heading.className = "roster-group-heading";
+      heading.textContent = group+" ("+dogsInGroup.length+")";
+      container.appendChild(heading);
+      var ul = document.createElement("ul");
+      ul.className = "roster-list";
+      dogsInGroup.forEach(function(d){
+        var li = document.createElement("li");
+        var nameSpan = document.createElement("span");
+        nameSpan.textContent = d.name;
+        li.appendChild(nameSpan);
+        if(isAdmin){
+          var controls = document.createElement("span");
+          controls.className = "roster-row-controls";
+          var sel = document.createElement("select");
+          GROUPS.forEach(function(g){
+            var opt = document.createElement("option");
+            opt.value = g; opt.textContent = g;
+            if(g===d.group) opt.selected = true;
+            sel.appendChild(opt);
+          });
+          sel.addEventListener("change", function(){
+            d.group = sel.value;
+            saveConfig();
+            renderRosterList();
+            renderDogList();
+          });
+          var removeBtn = document.createElement("button");
+          removeBtn.className = "remove-dog-btn";
+          removeBtn.type = "button";
+          removeBtn.textContent = "Remove";
+          removeBtn.addEventListener("click", function(){
+            if(confirm('Remove '+d.name+' from the active roster? Past entries stay visible in Monthly Overview.')){
+              config.dogs = config.dogs.filter(function(x){ return x.name!==d.name; });
+              saveConfig();
+              renderRosterList();
+              renderDogList();
+            }
+          });
+          controls.appendChild(sel);
+          controls.appendChild(removeBtn);
+          li.appendChild(controls);
+        }
+        ul.appendChild(li);
+      });
+      container.appendChild(ul);
+    });
+  }
+
+  function addDogsToRoster(names, group){
+    var added = 0;
+    names.forEach(function(raw){
+      var name = raw.trim();
+      if(!name) return;
+      var exists = config.dogs.some(function(d){ return d.name.toLowerCase()===name.toLowerCase(); });
+      if(!exists){ config.dogs.push({ name:name, group:group||GROUPS[0] }); added++; }
+    });
+    if(added>0) saveConfig();
+    return added;
+  }
+
+  function updateAdminUI(){
+    document.getElementById("adminLockBtn").textContent = isAdmin ? "🔓" : "🔒";
+    document.getElementById("adminLockBtn").title = isAdmin ? "Leader mode on — tap to lock" : "Leader access";
+    document.getElementById("adminOnlyBlock").hidden = !isAdmin;
+    document.getElementById("rosterUnlockPrompt").hidden = isAdmin;
+    renderRosterList();
+    renderDogList();
+  }
+
+  // ---------- fecal guide modal ----------
+  function renderGuideModal(){
+    var body = document.getElementById("guideBody");
+    var html = "";
+    GUIDE_DATA.forEach(function(g){
+      html += '<div class="guide-row">'+
+        '<span class="guide-num" style="background:'+TIER_COLOR[g.tier]+'">'+g.n+'</span>'+
+        '<span class="guide-text"><b>'+g.title+'</b><span>'+g.text+'</span></span>'+
+      '</div>';
+    });
+    html += '<p class="footnote">Scores 2–3 are the healthy range. This is our own simplified guide based on the widely used veterinary fecal-scoring concept.</p>'+
+      '<a class="guide-link" href="https://www.purinainstitute.com/centresquare/nutritional-and-clinical-assessment-tools" target="_blank" rel="noopener">See Purina\'s official fecal scoring chart (with photos) ↗</a>';
+    body.innerHTML = html;
+  }
+
+  // ---------- init & events ----------
+  async function init(){
+    var today = new Date();
+    currentDate = fmtDate(today);
+    todayStr = currentDate;
+    currentShift = (today.getHours()<12) ? "AM" : "PM";
+    dateInput.value = currentDate;
+    dateInput.max = currentDate;
+    monthPicker.value = today.getFullYear()+"-"+pad(today.getMonth()+1);
+
+    dogListEl.innerHTML = '<p class="loading-state">Loading shared data…</p>';
+    await testStorage();
+    config = await loadConfig();
+    shelterTitleEl.textContent = config.shelterName || "Shelter Care Log";
+    document.getElementById("shelterNameInput").value = config.shelterName || "";
+    updateAdminUI();
+    renderGuideModal();
+
+    await ensureMonthLoaded(currentDate, false);
+    renderDogList();
+
+    document.querySelectorAll(".shift-btn").forEach(function(btn){
+      if(btn.dataset.shift===currentShift) btn.classList.add("active");
+      btn.addEventListener("click", function(){
+        document.querySelectorAll(".shift-btn").forEach(function(b){ b.classList.remove("active"); });
+        btn.classList.add("active");
+        currentShift = btn.dataset.shift;
+        renderDogList();
+      });
+    });
+
+    document.querySelectorAll(".tab-btn").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        document.querySelectorAll(".tab-btn").forEach(function(b){ b.classList.remove("active"); });
+        document.querySelectorAll(".tab-panel").forEach(function(p){ p.classList.remove("active"); });
+        btn.classList.add("active");
+        document.getElementById("tab-"+btn.dataset.tab).classList.add("active");
+        if(btn.dataset.tab==="overview") renderOverview();
+      });
+    });
+
+    dateInput.addEventListener("change", function(){ goToDate(dateInput.value); });
+    document.getElementById("prevDay").addEventListener("click", function(){
+      var d = parseDate(currentDate); d.setDate(d.getDate()-1); goToDate(fmtDate(d));
+    });
+    document.getElementById("nextDay").addEventListener("click", function(){
+      var d = parseDate(currentDate); d.setDate(d.getDate()+1);
+      var newDate = fmtDate(d);
+      if(newDate > dateInput.max) return;
+      goToDate(newDate);
+    });
+    document.getElementById("refreshBtn").addEventListener("click", forceRefresh);
+
+    document.getElementById("searchInput").addEventListener("input", function(e){
+      searchTerm = e.target.value; renderDogList();
+    });
+    var unloggedBtn = document.getElementById("unloggedToggle");
+    unloggedBtn.addEventListener("click", function(){
+      unloggedOnly = !unloggedOnly;
+      unloggedBtn.classList.toggle("active", unloggedOnly);
+      renderDogList();
+    });
+
+    monthPicker.addEventListener("change", renderOverview);
+    document.getElementById("exportCsvBtn").addEventListener("click", exportMonthCsv);
+
+    document.querySelectorAll("#groupFilterRow .chip-toggle").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        document.querySelectorAll("#groupFilterRow .chip-toggle").forEach(function(b){ b.classList.remove("active"); });
+        btn.classList.add("active");
+        groupFilter = btn.dataset.group;
+        renderDogList();
+      });
+    });
+    document.querySelectorAll("#overviewGroupFilterRow .chip-toggle").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        document.querySelectorAll("#overviewGroupFilterRow .chip-toggle").forEach(function(b){ b.classList.remove("active"); });
+        btn.classList.add("active");
+        overviewGroupFilter = btn.dataset.group;
+        renderOverview();
+      });
+    });
+
+    function openPinModal(){
+      document.getElementById("pinInput").value = "";
+      document.getElementById("pinError").hidden = true;
+      document.getElementById("pinModal").hidden = false;
+    }
+    document.getElementById("adminLockBtn").addEventListener("click", function(){
+      if(isAdmin){
+        isAdmin = false;
+        updateAdminUI();
+        showToast("Leader access locked.");
+      } else {
+        openPinModal();
+      }
+    });
+    document.getElementById("openPinFromRoster").addEventListener("click", openPinModal);
+    document.getElementById("closePinModal").addEventListener("click", function(){ document.getElementById("pinModal").hidden = true; });
+    document.getElementById("pinSubmitBtn").addEventListener("click", function(){
+      var val = document.getElementById("pinInput").value.trim();
+      if(val === config.adminPin){
+        isAdmin = true;
+        document.getElementById("pinModal").hidden = true;
+        updateAdminUI();
+        showToast("Leader access unlocked.");
+      } else {
+        document.getElementById("pinError").hidden = false;
+      }
+    });
+    document.getElementById("pinInput").addEventListener("keydown", function(e){
+      if(e.key==="Enter") document.getElementById("pinSubmitBtn").click();
+    });
+    document.getElementById("relockBtn").addEventListener("click", function(){
+      isAdmin = false;
+      updateAdminUI();
+      showToast("Leader access locked.");
+    });
+    document.getElementById("savePinBtn").addEventListener("click", function(){
+      var input = document.getElementById("newPinInput");
+      var val = input.value.trim();
+      if(!/^\d{4}$/.test(val)){ alert("PIN must be exactly 4 digits."); return; }
+      config.adminPin = val;
+      saveConfig();
+      input.value = "";
+      showToast("Leader PIN updated.");
+    });
+
+    document.getElementById("rosterBtn").addEventListener("click", function(){ document.getElementById("rosterModal").hidden = false; });
+    document.getElementById("closeRoster").addEventListener("click", function(){ document.getElementById("rosterModal").hidden = true; });
+    document.getElementById("guideInfoBtn").addEventListener("click", function(){ document.getElementById("guideModal").hidden = false; });
+    document.getElementById("closeGuide").addEventListener("click", function(){ document.getElementById("guideModal").hidden = true; });
+    document.getElementById("closeDetail").addEventListener("click", function(){ document.getElementById("detailModal").hidden = true; });
+    document.getElementById("closeLightbox").addEventListener("click", function(){ document.getElementById("lightboxModal").hidden = true; });
+    [document.getElementById("rosterModal"), document.getElementById("detailModal"), document.getElementById("guideModal"), document.getElementById("lightboxModal"), document.getElementById("pinModal")].forEach(function(overlay){
+      overlay.addEventListener("click", function(e){ if(e.target===overlay) overlay.hidden = true; });
+    });
+
+    document.getElementById("shelterNameInput").addEventListener("input", function(e){
+      config.shelterName = e.target.value;
+      saveConfig();
+      shelterTitleEl.textContent = config.shelterName || "Shelter Care Log";
+    });
+
+    document.getElementById("addDogBtn").addEventListener("click", function(){
+      var input = document.getElementById("newDogName");
+      var group = document.getElementById("newDogGroup").value;
+      var name = input.value.trim();
+      if(!name) return;
+      var added = addDogsToRoster([name], group);
+      if(added===0){ alert(name+" is already in the roster."); return; }
+      input.value = "";
+      renderRosterList();
+      renderDogList();
+    });
+    document.getElementById("newDogName").addEventListener("keydown", function(e){
+      if(e.key==="Enter") document.getElementById("addDogBtn").click();
+    });
+    document.getElementById("bulkAddBtn").addEventListener("click", function(){
+      var area = document.getElementById("bulkAddArea");
+      var group = document.getElementById("bulkAddGroup").value;
+      var names = area.value.split(/[\n,]/).map(function(s){ return s.trim(); }).filter(Boolean);
+      if(names.length===0) return;
+      var added = addDogsToRoster(names, group);
+      area.value = "";
+      renderRosterList();
+      renderDogList();
+      showToast(added+" dog"+(added===1?"":"s")+" added to "+group+".");
+    });
+
+    document.addEventListener("visibilitychange", function(){
+      if(!document.hidden) forceRefresh();
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", init);
+})();
+</script>
+</body>
+</html>
